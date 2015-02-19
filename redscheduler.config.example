@@ -1,0 +1,6 @@
+# web url to your redmine instance
+siteurl: https://www.example.com
+# Your api key located under My Account
+apikey: fromyouraccount
+# The id of the project that will contain job trackers
+jobschedulerproject: samples
