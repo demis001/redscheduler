@@ -14,6 +14,9 @@
 redscheduler
 ============
 
-Use `Redmine <http://www.redmine.org>`_ to manage sample data
+Use `Redmine <http://www.redmine.org>`_ issues to model a simple job queue system.
+Not nearly as comprehensive as using a full blown scheduler like PBS or SGE, but
+aims at being lightweight and simple.
 
-Documentation is hosted on Read The Docs `here <http://redscheduler.readthedocs.org>`_
+Documentation will be hosted on Read The Docs `here <http://redscheduler.readthedocs.org>`_
+sometime
