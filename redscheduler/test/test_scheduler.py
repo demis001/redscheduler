@@ -5,10 +5,24 @@ from redmine.managers import ResourceManager
 from .. import scheduler, config
 
 responses = {
-    'Jobs': {
-        'get': {'issue': {'subject': 'Job', 'id': 1}},
-        'all': {'issues': [{'subject': 'job1', 'id': 1},{'subject': 'job2', 'id': 2}]},
-        'filter': {'issues': [{'subject': 'job1', 'id': 1},{'subject': 'job2', 'id': 2}]},
+    'Job': {
+        'get': {'issue': {'subject': 'job1', 'id': 1, 'description': '--arg1 foo\r\n--arg2 bar'}},
+        'all': {'issues': [
+            {'subject': 'job1', 'id': 1, 'description': '--arg1 foo'},
+            {'subject': 'job2', 'id': 2}
+        ]},
+        'filter': {'issues': [
+            {'subject': 'job1', 'id': 1},
+            {'subject': 'job2', 'id': 2}
+        ]},
+    },
+    'issue_statuses': {
+        'all': {'issue_statuses': [
+            {"id":1, "name": "New", "is_default": True},
+            {"id":2, "name": "In Progress"},
+            {"id":3, "name": "Completed", "is_closed": True},
+            {"id":4, "name": "Error"}
+        ]}
     }
 }
 
@@ -23,8 +37,8 @@ class TestRedScheduler(unittest.TestCase):
         self.assertEqual(self.redscheduler.custom_resource_paths, ('redscheduler.scheduler',))
 
     def test_gets_jobs_manager(self):
-        _jobs = self.redscheduler.Jobs
-        self.assertIsInstance(_jobs, scheduler.JobsManager)
+        _jobs = self.redscheduler.Job
+        self.assertIsInstance(_jobs, scheduler.JobManager)
         self.assertEqual(
             self.config['jobschedulerproject'],
             _jobs.resource_class.project_id
@@ -34,24 +48,24 @@ class TestRedScheduler(unittest.TestCase):
         resource = self.redscheduler.Issue
         self.assertIsInstance(resource, ResourceManager)
 
-class TestJobsManager(unittest.TestCase):
+class TestJobManager(unittest.TestCase):
     def setUp(self):
         self.config = config.load_config(CONFIG_EXAMPLE)
         self.redscheduler = scheduler.RedScheduler(self.config)
 
     def test_sets_redmine_attribute(self):
         self.assertEqual(
-            self.redscheduler.Jobs.redmine,
+            self.redscheduler.Job.redmine,
             self.redscheduler
         )
 
     def test_sets_correct_resource_class(self):
         self.assertIs(
-            self.redscheduler.Jobs.resource_class,
-            scheduler.Jobs
+            self.redscheduler.Job.resource_class,
+            scheduler.Job
         )
 
-class TestJobsResource(unittest.TestCase):
+class TestJobResource(unittest.TestCase):
     def setUp(self):
         self.config = config.load_config(CONFIG_EXAMPLE)
         self.redmine = scheduler.RedScheduler(self.config)
@@ -71,11 +85,21 @@ class TestJobsResource(unittest.TestCase):
 
     def test_is_redmine_resourcemanager(self):
         from redmine.managers import ResourceManager
-        self.assertIsInstance(self.redmine.Jobs, ResourceManager)
+        self.assertIsInstance(self.redmine.Job, ResourceManager)
+
+    def test_job_class_has_correct_members(self):
+        self.assertIn('percent_done', scheduler.Job._members)
+        self.assertIn('arguments', scheduler.Job._members)
+        self.assertIn('status', scheduler.Job._members)
+
+    def test_manager_returns_job_resource(self):
+        self.response.json = json_response(responses['Job']['get'])
+        job = self.redmine.Job.get(1)
+        self.assertIsInstance(job, scheduler.Job)
 
     def test_retrieves_only_jobs_from_proj(self):
-        self.response.json = json_response(responses['Jobs']['all'])
-        issues = self.redmine.Jobs.all()
+        self.response.json = json_response(responses['Job']['all'])
+        issues = self.redmine.Job.all()
         self.assertEqual(issues[0].id, 1)
         self.assertEqual(issues[0].subject, 'job1')
         self.assertEqual(issues[1].id, 2)
@@ -83,3 +107,43 @@ class TestJobsResource(unittest.TestCase):
         args, kwargs = self.mock_get.call_args
         params_sent = kwargs['params']
         self.assertEqual(params_sent['project_id'], self.config['jobschedulerproject'])
+
+    def test_gets_arguments_for_job(self):
+        self.response.json = json_response(responses['Job']['get'])
+        job = self.redmine.Job.get(1)
+        self.assertEqual(['--arg1 foo','--arg2 bar'], job.arguments)
+
+    def test_percent_done_property(self):
+        self.response.json = json_response(responses['Job']['get'])
+        job = self.redmine.Job.get(1)
+        job.percent_done = 100
+        self.assertEqual(100, job.done_ratio)
+        self.assertEqual(100, job.percent_done)
+
+    def test_status_property_completed(self):
+        self.response.json = json_response(responses['Job']['get'])
+        job = self.redmine.Job.get(1)
+        self.response.json = json_response(responses['issue_statuses']['all'])
+        job.status = 'New'
+        self.assertEqual(1, job.status_id)
+        self.assertEqual('New', job.status)
+        job.status = 'In Progress'
+        self.assertEqual(2, job.status_id)
+        self.assertEqual('In Progress', job.status)
+        job.status = 'Completed'
+        self.assertEqual(3, job.status_id)
+        self.assertEqual('Completed', job.status)
+        job.status = 'Error'
+        self.assertEqual(4, job.status_id)
+        self.assertEqual('Error', job.status)
+
+    def test_status_for_status_id(self):
+        self.response.json = json_response(responses['Job']['get'])
+        job = self.redmine.Job.get(1)
+        self.response.json = json_response(responses['issue_statuses']['all'])
+        status = job._status_for_status_id(1)
+
+        # Need to test has attribut and value
+        # Need to test missing attribute for status
+        # Need to test missing value
+        
