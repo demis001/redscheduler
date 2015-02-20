@@ -4,3 +4,16 @@ siteurl: https://www.example.com
 apikey: fromyouraccount
 # The id of the project that will contain job trackers
 jobschedulerproject: samples
+# The directory that all Issue_ID directories will be created in
+# Each job is run within it's own issue id directory in here
+output_directory: /tmp
+# Here you define all of your jobs
+# Each defined job needs to have a tracker in Redmine
+job_defs:
+    # Here you are defining a job that runs echos foo\nbar and then pipes to
+    # grep -o
+    # output from stdout will be put into the issue directory/output.stdout
+    # {ISSUEDIR} will be replaced with the path to the issue_id directory inside
+    # of output_directory
+    example:
+        cli: "echo -e \"foo\nbar\" | grep -o > {ISSUEDIR}/output.stdout"
