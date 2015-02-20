@@ -113,6 +113,14 @@ class TestJobResource(unittest.TestCase):
         job = self.redmine.Job.get(1)
         self.assertEqual(['--arg1 foo','--arg2 bar'], job.arguments)
 
+    def test_arguments_is_readonly(self):
+        self.response.json = json_response(responses['Job']['get'])
+        job = self.redmine.Job.get(1)
+        self.assertRaises(
+            AttributeError,
+            setattr, job, 'arguments', 'foo'
+        )
+
     def test_percent_done_property(self):
         self.response.json = json_response(responses['Job']['get'])
         job = self.redmine.Job.get(1)
