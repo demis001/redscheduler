@@ -16,7 +16,7 @@ responses = {
             {'subject': 'job2', 'id': 2}
         ]},
     },
-    'issue_statuses': {
+    'issue_status': {
         'all': {'issue_statuses': [
             {"id":1, "name": "New", "is_default": True},
             {"id":2, "name": "In Progress"},
@@ -123,7 +123,7 @@ class TestJobResource(unittest.TestCase):
     def test_status_property_completed(self):
         self.response.json = json_response(responses['Job']['get'])
         job = self.redmine.Job.get(1)
-        self.response.json = json_response(responses['issue_statuses']['all'])
+        self.response.json = json_response(responses['issue_status']['all'])
         job.status = 'New'
         self.assertEqual(1, job.status_id)
         self.assertEqual('New', job.status)
@@ -137,13 +137,11 @@ class TestJobResource(unittest.TestCase):
         self.assertEqual(4, job.status_id)
         self.assertEqual('Error', job.status)
 
-    def test_status_for_status_id(self):
+    def test_can_only_set_status_to_invvalid_name_raises_exception(self):
         self.response.json = json_response(responses['Job']['get'])
         job = self.redmine.Job.get(1)
-        self.response.json = json_response(responses['issue_statuses']['all'])
-        status = job._status_for_status_id(1)
-
-        # Need to test has attribut and value
-        # Need to test missing attribute for status
-        # Need to test missing value
-        
+        self.response.json = json_response(responses['issue_status']['all'])
+        self.assertRaises(
+            scheduler.InvalidStatus,
+            setattr, job, 'status', 'foo'
+        )

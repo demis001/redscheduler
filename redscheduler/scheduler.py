@@ -2,6 +2,12 @@ from redmine import Redmine
 from redmine.resources import Issue
 from redmine.managers import ResourceManager
 
+class InvalidStatus(Exception):
+    '''
+    Raised for invalid status specified
+    '''
+    pass
+
 class RedScheduler(Redmine):
     def __init__(self, config):
         self.config = config
@@ -73,10 +79,11 @@ class Job(Issue):
         Read the .status_id and return the name for the current
         status
         '''
-
+        status = self.manager.redmine.issue_status.all().get(self.status_id)
+        return status.name
 
     @status.setter
-    def status(self, status):
+    def status(self, statusname):
         '''
         Set the status_id of the job
         Finds the correct status_id based on the status name given
@@ -87,5 +94,20 @@ class Job(Issue):
         - Completed
         - Error
 
-        :param str status: Status name to set
+        :param str statusname: Status name to set
         '''
+        valid_statuses = (
+            'New',
+            'In Progress',
+            'Completed',
+            'Error'
+        )
+        all_status = self.manager.redmine.issue_status.all()
+        _status = None
+        for status in all_status:
+            if status.name == statusname:
+                _status = status
+                break
+        if _status is None or statusname not in valid_statuses:
+            raise InvalidStatus("{0} is an invalid status".format(statusname))
+        self.status_id = _status.id
