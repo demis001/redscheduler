@@ -62,7 +62,9 @@ class Job(Issue):
         '''
         args = []
         for line in self.description.splitlines():
-            args += shlex.split(line.encode('utf-8'))
+            line = line.encode('utf-8')
+            line = self._replace_attachment_with_path(line)
+            args += shlex.split(line)
         return args
 
     @property
@@ -177,10 +179,6 @@ class Job(Issue):
             self.manager.redmine.config['output_directory'],
             'Issue_{0}'.format(self.id)
         )
-
-    def _replace_command_line_attachments(self, command_line):
-        '''
-        '''
 
     def run(self):
         '''

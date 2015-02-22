@@ -129,6 +129,14 @@ class TestJobResource(unittest.TestCase):
             setattr, job, 'arguments', 'foo'
         )
 
+    def test_argument_property_replaces_attachments_with_paths(self):
+        response = responses['Job']['get']
+        response['issue']['attachments'] = responses['attachments']['all']
+        self.response.json = json_response(response)
+        job = self.redscheduler.Job.get(1)
+        job.description = 'attachment:bar.txt'
+        self.assertEqual('/tmp/Issue_1/bar.txt', job.arguments[0])
+
     def test_percent_done_property(self):
         self.response.json = json_response(responses['Job']['get'])
         job = self.redscheduler.Job.get(1)
@@ -245,14 +253,13 @@ class TestJobResource(unittest.TestCase):
             'jobschedulerproject': 'foo',
             'job_defs': {
                 'example': {
-                    'cli': 'exe foo -bar',
+                    'cli': 'exe foo -bar attachment:bar.txt',
                     'stdout': '{ISSUEDIR}/stdout.txt',
                     'stderr': '{ISSUEDIR}/stderr.txt'
                 }
             }
         }
         job = self.redscheduler.Job.get(1)
-        #self.response.json = json_response(responses['issue_status']['all'])
         mock_os.path.join = os.path.join
         job.run()
         mock_os.mkdir.assert_called_once_with('/tmp/Issue_1')
