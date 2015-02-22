@@ -54,8 +54,6 @@ class Job(Issue):
 
     @classmethod
     def translate_params(cls, params):
-        # Inject specific project_id and tracker_id for Job based on config
-        #params['project_id'] = cls._project_id
         return super(Job, cls).translate_params(params)
 
     @property

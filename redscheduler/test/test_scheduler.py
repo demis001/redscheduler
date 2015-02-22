@@ -77,6 +77,12 @@ class TestJobManager(unittest.TestCase):
             scheduler.Job
         )
 
+    def test_ensures_project_id_from_config(self):
+        self.assertEqual(
+            {'project_id':self.config['jobschedulerproject']},
+            self.redscheduler.Job.prepare_params({'project_id': 'foo'})
+        )
+
 class TestJobResource(unittest.TestCase):
     def setUp(self):
         self.config = config.load_config(CONFIG_EXAMPLE)
@@ -294,31 +300,6 @@ class TestJobResource(unittest.TestCase):
         stdout, stderr = popen_call_kwargs['stdout']._mock_new_parent.call_args_list
         stdout.assert_called_once_with('/tmp/Issue_1/stdout.txt')
         stderr.assert_called_once_with('/tmp/Issue_1/stderr.txt')
-
-    @mock.patch('redmine.open', mock.mock_open(), create=True)
-    @mock.patch('redscheduler.scheduler.open', mock.mock_open(), create=True)
-    @mock.patch('redscheduler.scheduler.os')
-    @mock.patch('redscheduler.scheduler.subprocess')
-    def test_run_job_prevents_shell_injection(self, mock_subprocess, mock_os):
-        mock_os.path.join = os.path.join
-        response = responses['Job']['get']
-        response['issue']['attachment'] = {'content_url': 'http://foo/bar.txt'}
-        issue_status = responses['issue_status']['all']['issue_statuses']
-        response['issue_statuses'] = issue_status
-        self.response.iter_content = lambda chunk_size: (str(num) for num in range(0, 5))
-        response_mock = mock.Mock()
-        self.response.json = json_response(response)
-        self.redscheduler.config = {
-            'siteurl': 'http://foo.bar',
-            'output_directory': '/tmp',
-            'jobschedulerproject': 'foo',
-            'job_defs': {
-                'example': {
-                    'cli': 'exe foo -bar',
-                }
-            }
-        }
-        job = self.redscheduler.Job.get(1)
 
     @mock.patch('redmine.open', mock.mock_open(), create=True)
     @mock.patch('redscheduler.scheduler.open', mock.mock_open(), create=True)
