@@ -150,12 +150,20 @@ class TestJobResource(unittest.TestCase):
         self.response.json = json_response(responses['issue_status']['all'])
         job.statusname = 'New'
         self.assertEqual(1, job.status_id)
+        self.assertEqual({'status':1}, job.status)
+        self.assertEqual('New', job.statusname)
         job.statusname = 'In Progress'
         self.assertEqual(2, job.status_id)
+        self.assertEqual({'status':2}, job.status)
+        self.assertEqual('In Progress', job.statusname)
         job.statusname = 'Completed'
         self.assertEqual(3, job.status_id)
+        self.assertEqual({'status':3}, job.status)
+        self.assertEqual('Completed', job.statusname)
         job.statusname = 'Error'
         self.assertEqual(4, job.status_id)
+        self.assertEqual({'status':4}, job.status)
+        self.assertEqual('Error', job.statusname)
 
     def test_can_only_set_status_to_invvalid_name_raises_exception(self):
         self.response.json = json_response(responses['Job']['get'])

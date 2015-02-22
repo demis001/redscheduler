@@ -88,7 +88,8 @@ class Job(Issue):
         '''
         Return the status name
         '''
-        return self.status#.name
+        print self.__dict__['_attributes']
+        return self.status.name
 
     @statusname.setter
     def statusname(self, statusname):
@@ -121,7 +122,11 @@ class Job(Issue):
         if _status is None or statusname not in valid_statuses:
             raise InvalidStatus("{0} is an invalid status".format(statusname))
         # set the status_id of this resource
+        print self.__dict__
         self.status_id = _status.id
+        print self.__dict__
+        self.__dict__['_attributes']['status']['id'] = _status['id']
+        self.__dict__['_attributes']['status']['name'] = _status['name']
 
     @property
     def command_line(self):
@@ -202,24 +207,21 @@ class Job(Issue):
         self.statusname = 'In Progress'
         self.notes = 'Output will be located in {0}'.format(self.issue_dir)
         self.save()
+        print "Updated issue status with output location and set to In Progress"
     
         # Create issue dir
+        print "Creating {0} to run in".format(self.issue_dir)
         os.mkdir(self.issue_dir)
 
         # The command line that will be run
-        # Needs attachment:(.*) replaced
         cli = self.command_line
 
         # Download attachments into issue dir
         # and replace all attachment:... in command_line with download path
         for attach in self.attachments:
             # Download into issue_dir
+            print "Downloading {0} to {1}".format(attach.filename, self.issue_dir)
             filepath = attach.download(savepath=self.issue_dir)
-            # Pattern to replace
-            p = 'attachment:{0}'.format(attach.filename)
-            # Loop through all command line options and replace any attachment:....
-            for i in range(len(cli)):
-                cli[i] = re.sub(p, filepath, cli[i])
 
         # Run the command with correct stdout/stderr and cwd
         jobdef = self.job_def
@@ -228,6 +230,7 @@ class Job(Issue):
         stdout_fh = open(stdout_path, 'w')
         stderr_fh = open(stderr_path, 'w')
         try:
+            print "Running {0}".format(' '.join(cli))
             p = subprocess.Popen(cli, stdout=stdout_fh, stderr=stderr_fh, cwd=self.issue_dir)
             # Wait for job to complete or error
             retcode = p.wait()
@@ -240,6 +243,7 @@ class Job(Issue):
             self.statusname = 'Error'
 
         # Save issue with new status
+        print "Saving issue with new status {0}".format(self.statusname)
         self.save()
 
         return retcode
