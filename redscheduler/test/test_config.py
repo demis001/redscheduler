@@ -8,11 +8,11 @@ from .. import config
 class TestGetConfig(unittest.TestCase):
     def test_loads_config(self):
         r = config.load_config(CONFIG_EXAMPLE)
-        keys = (
-            'siteurl', 'apikey', 'jobscheduleproject'
-        )
-        for key in keys:
-            self.assertIn(key, r)
+        keys = sorted((
+            'siteurl', 'apikey', 'jobschedulerproject',
+            'output_directory', 'job_defs'
+        ))
+        self.assertEqual(keys, sorted(r.keys()))
 
 class TestLoadUserConfig(unittest.TestCase):
     def test_loads_from_homedir_path(self):
