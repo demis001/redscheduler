@@ -3,6 +3,7 @@ import os.path
 import subprocess
 import re
 import os
+import string
 
 from redmine import Redmine
 from redmine.resources import Issue
@@ -30,7 +31,6 @@ class RedScheduler(Redmine):
     def __getattr__(self, resource):
         if resource == 'Job':
             resource = JobManager(self, 'Jobs')
-            resource.resource_class.project_id = self.config['jobschedulerproject']
         else:
             resource = super(RedScheduler, self).__getattr__(resource)
         return resource
@@ -39,6 +39,12 @@ class JobManager(ResourceManager):
     def __init__(self, redmine, resource_name):
         self.redmine = redmine
         self.resource_class = Job
+
+    def prepare_params(self, params):
+        params = super(JobManager, self).prepare_params(params)
+        if 'project_id' in params:
+            params['project_id'] = self.redmine.config['jobschedulerproject']
+        return params
         
 class Job(Issue):
     _members = Issue._members + (
@@ -49,7 +55,7 @@ class Job(Issue):
     @classmethod
     def translate_params(cls, params):
         # Inject specific project_id and tracker_id for Job based on config
-        params['project_id'] = cls.project_id
+        #params['project_id'] = cls._project_id
         return super(Job, cls).translate_params(params)
 
     @property
@@ -88,7 +94,6 @@ class Job(Issue):
         '''
         Return the status name
         '''
-        print self.__dict__['_attributes']
         return self.status.name
 
     @statusname.setter
@@ -122,9 +127,7 @@ class Job(Issue):
         if _status is None or statusname not in valid_statuses:
             raise InvalidStatus("{0} is an invalid status".format(statusname))
         # set the status_id of this resource
-        print self.__dict__
         self.status_id = _status.id
-        print self.__dict__
         self.__dict__['_attributes']['status']['id'] = _status['id']
         self.__dict__['_attributes']['status']['name'] = _status['name']
 
@@ -234,10 +237,12 @@ class Job(Issue):
             p = subprocess.Popen(cli, stdout=stdout_fh, stderr=stderr_fh, cwd=self.issue_dir)
             # Wait for job to complete or error
             retcode = p.wait()
-        except:
+        except Exception as e:
+            self.notes = 'Error: {0}'.format(e)
             retcode = -1
 
-        if retcode != 0:
+        print "Return code was {0}".format(retcode)
+        if retcode == 0:
             self.statusname = 'Completed'
         else:
             self.statusname = 'Error'

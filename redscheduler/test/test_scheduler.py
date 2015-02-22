@@ -49,15 +49,12 @@ class TestRedScheduler(unittest.TestCase):
     def test_initializes_correctly(self):
         self.assertEqual(self.redscheduler.url, self.config['siteurl'])
         self.assertEqual(self.redscheduler.key, self.config['apikey'])
+        self.assertEqual(self.config['jobschedulerproject'], self.redscheduler.config['jobschedulerproject'])
         self.assertEqual(self.redscheduler.custom_resource_paths, ('redscheduler.scheduler',))
 
     def test_gets_jobs_manager(self):
-        _jobs = self.redscheduler.Job
-        self.assertIsInstance(_jobs, scheduler.JobManager)
-        self.assertEqual(
-            self.config['jobschedulerproject'],
-            _jobs.resource_class.project_id
-        )
+        _jobm = self.redscheduler.Job
+        self.assertIsInstance(_jobm, scheduler.JobManager)
 
     def test_returns_normal_redmine_resource_managers(self):
         resource = self.redscheduler.Issue
@@ -108,17 +105,6 @@ class TestJobResource(unittest.TestCase):
         job = self.redscheduler.Job.get(1)
         self.assertIsInstance(job, scheduler.Job)
 
-    def test_retrieves_only_jobs_from_proj(self):
-        self.response.json = json_response(responses['Job']['all'])
-        issues = self.redscheduler.Job.all()
-        self.assertEqual(issues[0].id, 1)
-        self.assertEqual(issues[0].subject, 'job1')
-        self.assertEqual(issues[1].id, 2)
-        self.assertEqual(issues[1].subject, 'job2')
-        args, kwargs = self.mock_get.call_args
-        params_sent = kwargs['params']
-        self.assertEqual(params_sent['project_id'], self.config['jobschedulerproject'])
-
     def test_argument_property(self):
         self.response.json = json_response(responses['Job']['get'])
         job = self.redscheduler.Job.get(1)
@@ -150,22 +136,21 @@ class TestJobResource(unittest.TestCase):
         self.response.json = json_response(responses['issue_status']['all'])
         job.statusname = 'New'
         self.assertEqual(1, job.status_id)
-        self.assertEqual({'status':1}, job.status)
+        self.assertEqual('New', job.status.name)
+        self.assertEqual(1, job.status.id)
         self.assertEqual('New', job.statusname)
         job.statusname = 'In Progress'
         self.assertEqual(2, job.status_id)
-        self.assertEqual({'status':2}, job.status)
         self.assertEqual('In Progress', job.statusname)
         job.statusname = 'Completed'
         self.assertEqual(3, job.status_id)
-        self.assertEqual({'status':3}, job.status)
         self.assertEqual('Completed', job.statusname)
         job.statusname = 'Error'
         self.assertEqual(4, job.status_id)
-        self.assertEqual({'status':4}, job.status)
         self.assertEqual('Error', job.statusname)
+        self.assertEqual(job.__dict__['_changes'], {'status_id':4})
 
-    def test_can_only_set_status_to_invvalid_name_raises_exception(self):
+    def test_can_only_set_status_to_invalid_name_raises_exception(self):
         self.response.json = json_response(responses['Job']['get'])
         job = self.redscheduler.Job.get(1)
         self.response.json = json_response(responses['issue_status']['all'])
@@ -246,12 +231,12 @@ class TestJobResource(unittest.TestCase):
     @mock.patch('redscheduler.scheduler.os')
     @mock.patch('redscheduler.scheduler.subprocess')
     def test_run_runs_correct_popen(self, mock_subprocess, mock_os):
+        mock_os.path.join = os.path.join
         response = responses['Job']['get']
         response['issue']['attachment'] = {'content_url': 'http://foo/bar.txt'}
         issue_status = responses['issue_status']['all']['issue_statuses']
         response['issue_statuses'] = issue_status
         self.response.iter_content = lambda chunk_size: (str(num) for num in range(0, 5))
-
         response_mock = mock.Mock()
         self.response.json = json_response(response)
 
@@ -268,7 +253,7 @@ class TestJobResource(unittest.TestCase):
             }
         }
         job = self.redscheduler.Job.get(1)
-        mock_os.path.join = os.path.join
+        mock_subprocess.Popen.return_value.wait.return_value = 0
         job.run()
         mock_os.mkdir.assert_called_once_with('/tmp/Issue_1')
         popen_call_args, popen_call_kwargs = mock_subprocess.Popen.call_args
@@ -278,18 +263,57 @@ class TestJobResource(unittest.TestCase):
         stdout, stderr = popen_call_kwargs['stdout']._mock_new_parent.call_args_list
         stdout.assert_called_once_with('/tmp/Issue_1/stdout.txt')
         stderr.assert_called_once_with('/tmp/Issue_1/stderr.txt')
+        self.assertEqual('Completed', job.statusname)
 
-    '''
     @mock.patch('redmine.open', mock.mock_open(), create=True)
-    @mock.patch('scheduler.subprocess')
-    def test_run_job_writes_stdout_stderr_not_specified(self, mock_popen):
-        self.response.json = json_response(responses['Job']['get'])
+    @mock.patch('redscheduler.scheduler.open', mock.mock_open(), create=True)
+    @mock.patch('redscheduler.scheduler.os')
+    @mock.patch('redscheduler.scheduler.subprocess')
+    def test_run_job_writes_stdout_stderr_not_specified(self, mock_subprocess, mock_os):
+        mock_os.path.join = os.path.join
+        response = responses['Job']['get']
+        response['issue']['attachment'] = {'content_url': 'http://foo/bar.txt'}
+        issue_status = responses['issue_status']['all']['issue_statuses']
+        response['issue_statuses'] = issue_status
+        self.response.iter_content = lambda chunk_size: (str(num) for num in range(0, 5))
+        response_mock = mock.Mock()
+        self.response.json = json_response(response)
         self.redscheduler.config = {
             'siteurl': 'http://foo.bar',
             'output_directory': '/tmp',
             'jobschedulerproject': 'foo',
             'job_defs': {
-                'foo': {
+                'example': {
+                    'cli': 'exe foo -bar',
+                }
+            }
+        }
+        job = self.redscheduler.Job.get(1)
+        job.run()
+        popen_call_args, popen_call_kwargs = mock_subprocess.Popen.call_args
+        stdout, stderr = popen_call_kwargs['stdout']._mock_new_parent.call_args_list
+        stdout.assert_called_once_with('/tmp/Issue_1/stdout.txt')
+        stderr.assert_called_once_with('/tmp/Issue_1/stderr.txt')
+
+    @mock.patch('redmine.open', mock.mock_open(), create=True)
+    @mock.patch('redscheduler.scheduler.open', mock.mock_open(), create=True)
+    @mock.patch('redscheduler.scheduler.os')
+    @mock.patch('redscheduler.scheduler.subprocess')
+    def test_run_job_prevents_shell_injection(self, mock_subprocess, mock_os):
+        mock_os.path.join = os.path.join
+        response = responses['Job']['get']
+        response['issue']['attachment'] = {'content_url': 'http://foo/bar.txt'}
+        issue_status = responses['issue_status']['all']['issue_statuses']
+        response['issue_statuses'] = issue_status
+        self.response.iter_content = lambda chunk_size: (str(num) for num in range(0, 5))
+        response_mock = mock.Mock()
+        self.response.json = json_response(response)
+        self.redscheduler.config = {
+            'siteurl': 'http://foo.bar',
+            'output_directory': '/tmp',
+            'jobschedulerproject': 'foo',
+            'job_defs': {
+                'example': {
                     'cli': 'exe foo -bar',
                 }
             }
@@ -297,34 +321,29 @@ class TestJobResource(unittest.TestCase):
         job = self.redscheduler.Job.get(1)
 
     @mock.patch('redmine.open', mock.mock_open(), create=True)
-    @mock.patch('scheduler.subprocess')
-    def test_run_job_prevents_shell_injection(self, mock_popen):
-        self.response.json = json_response(responses['Job']['get'])
+    @mock.patch('redscheduler.scheduler.open', mock.mock_open(), create=True)
+    @mock.patch('redscheduler.scheduler.os')
+    @mock.patch('redscheduler.scheduler.subprocess')
+    def test_run_job_fails_sets_error_status(self, mock_subprocess, mock_os):
+        mock_os.path.join = os.path.join
+        response = responses['Job']['get']
+        response['issue']['attachment'] = {'content_url': 'http://foo/bar.txt'}
+        issue_status = responses['issue_status']['all']['issue_statuses']
+        response['issue_statuses'] = issue_status
+        self.response.iter_content = lambda chunk_size: (str(num) for num in range(0, 5))
+        response_mock = mock.Mock()
+        self.response.json = json_response(response)
         self.redscheduler.config = {
             'siteurl': 'http://foo.bar',
             'output_directory': '/tmp',
             'jobschedulerproject': 'foo',
             'job_defs': {
-                'foo': {
+                'example': {
                     'cli': 'exe foo -bar',
                 }
             }
         }
         job = self.redscheduler.Job.get(1)
-
-    @mock.patch('redmine.open', mock.mock_open(), create=True)
-    @mock.patch('scheduler.subprocess')
-    def test_run_job_fails_sets_error_status(self, mock_popen):
-        self.response.json = json_response(responses['Job']['get'])
-        self.redscheduler.config = {
-            'siteurl': 'http://foo.bar',
-            'output_directory': '/tmp',
-            'jobschedulerproject': 'foo',
-            'job_defs': {
-                'foo': {
-                    'cli': 'exe foo -bar',
-                }
-            }
-        }
-        job = self.redscheduler.Job.get(1)
-    '''
+        mock_subprocess.Popen.return_value.wait.return_value = 1
+        job.run()
+        self.assertEqual('Error', job.statusname)

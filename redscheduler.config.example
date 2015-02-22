@@ -3,7 +3,7 @@ siteurl: https://www.example.com
 # Your api key located under My Account
 apikey: fromyouraccount
 # The id of the project that will contain job trackers
-jobschedulerproject: samples
+jobschedulerproject: scheduler-project
 # The directory that all Issue_ID directories will be created in
 # Each job is run within it's own issue id directory in here
 output_directory: /tmp
