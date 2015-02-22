@@ -1,6 +1,7 @@
 from . import unittest, mock, json_response, CONFIG_EXAMPLE, builtins
 
 import os.path
+from nose.plugins.attrib import attr
 
 from redmine.managers import ResourceManager
 
@@ -159,23 +160,19 @@ class TestJobResource(unittest.TestCase):
 
     def test_replace_attachment_with_path(self):
         response = responses['Job']['get']
-        response['attachments'] = responses['attachments']['all']
+        response['issue']['attachments'] = responses['attachments']['all']
         self.response.json = json_response(response)
-        print self.response.json()
-        print '--- Fetching job 1 ---'
-        job = self.redscheduler.Job.get(1, include='attachments')
-        print "job __dict__"
-        print job.__dict__
+        job = self.redscheduler.Job.get(1)#, include='attachments')
 
         job.attachments
 
-        #r = job._replace_attachment_with_path('foo attachment:bar.txt baz')
+        r = job._replace_attachment_with_path('foo attachment:bar.txt baz')
         self.assertEqual('foo /tmp/Issue_1/bar.txt baz', r)
 
+    @attr('current')
     def test_command_line_property(self):
         response = responses['Job']['get']
-        response['attachments'] = responses['attachments']['all']
-        response['description'] = 'attachment:bar.txt'
+        response['issue']['attachments'] = responses['attachments']['all']
         self.response.json = json_response(response)
         self.redscheduler.config = config = {
             'siteurl': 'http://foo.bar',
@@ -228,18 +225,19 @@ class TestJobResource(unittest.TestCase):
             job.issue_dir
         )
 
+    @mock.patch('redmine.open', mock.mock_open(), create=True)
     @mock.patch('redscheduler.scheduler.open', mock.mock_open(), create=True)
     @mock.patch('redscheduler.scheduler.os')
     @mock.patch('redscheduler.scheduler.subprocess')
     def test_run_runs_correct_popen(self, mock_subprocess, mock_os):
         response = responses['Job']['get']
-        response['attachment'] = {'content_url': 'http://foo/bar.txt'}
+        response['issue']['attachment'] = {'content_url': 'http://foo/bar.txt'}
+        issue_status = responses['issue_status']['all']['issue_statuses']
+        response['issue_statuses'] = issue_status
         self.response.iter_content = lambda chunk_size: (str(num) for num in range(0, 5))
 
         response_mock = mock.Mock()
-        issue_status = responses['issue_status']['all']
-        response_mock.side_effect = [response, issue_status, response, response, issue_status, response]
-        self.response.json = response_mock
+        self.response.json = json_response(response)
 
         self.redscheduler.config = {
             'siteurl': 'http://foo.bar',

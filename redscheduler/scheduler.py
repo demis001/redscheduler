@@ -130,7 +130,7 @@ class Job(Issue):
         :return: list of arguments suitable for Popen
         '''
         jobdef = self.job_def
-        cli_str = self._replace_attachment_with_path(jobdef['cli'], self.attachments)
+        cli_str = self._replace_attachment_with_path(jobdef['cli'])
         cli = shlex.split(cli_str)
         return cli + self.arguments
 
@@ -141,11 +141,7 @@ class Job(Issue):
         :param str text: any string of text that might contain one or more attachment:... 
         :param list attachments: iterable of attachment resources
         '''
-        print 'Retrieving attachments'
-        print
         attachments = self.attachments
-        print 'Retrieved attachments'
-        print
         for attach in attachments:
             p = 'attachment:{0}'.format(attach.filename)
             text = re.sub(p, os.path.join(self.issue_dir,attach.filename), text)
