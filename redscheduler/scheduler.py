@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import shlex
 import os.path
 import subprocess
@@ -208,10 +210,10 @@ class Job(Issue):
         self.statusname = 'In Progress'
         self.notes = 'Output will be located in {0}'.format(self.issue_dir)
         self.save()
-        print "Updated issue status with output location and set to In Progress"
+        print("Updated issue status with output location and set to In Progress")
     
         # Create issue dir
-        print "Creating {0} to run in".format(self.issue_dir)
+        print("Creating {0} to run in".format(self.issue_dir))
         os.mkdir(self.issue_dir)
 
         # The command line that will be run
@@ -221,7 +223,7 @@ class Job(Issue):
         # and replace all attachment:... in command_line with download path
         for attach in self.attachments:
             # Download into issue_dir
-            print "Downloading {0} to {1}".format(attach.filename, self.issue_dir)
+            print("Downloading {0} to {1}".format(attach.filename, self.issue_dir))
             filepath = attach.download(savepath=self.issue_dir)
 
         # Run the command with correct stdout/stderr and cwd
@@ -231,7 +233,7 @@ class Job(Issue):
         stdout_fh = open(stdout_path, 'w')
         stderr_fh = open(stderr_path, 'w')
         try:
-            print "Running {0}".format(' '.join(cli))
+            print("Running {0}".format(' '.join(cli)))
             p = subprocess.Popen(cli, stdout=stdout_fh, stderr=stderr_fh, cwd=self.issue_dir)
             # Wait for job to complete or error
             retcode = p.wait()
@@ -239,14 +241,14 @@ class Job(Issue):
             self.notes = 'Error: {0}'.format(e)
             retcode = -1
 
-        print "Return code was {0}".format(retcode)
+        print("Return code was {0}".format(retcode))
         if retcode == 0:
             self.statusname = 'Completed'
         else:
             self.statusname = 'Error'
 
         # Save issue with new status
-        print "Saving issue with new status {0}".format(self.statusname)
+        print("Saving issue with new status {0}".format(self.statusname))
         self.save()
 
         return retcode

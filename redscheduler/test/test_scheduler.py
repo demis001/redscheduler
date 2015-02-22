@@ -265,7 +265,7 @@ class TestJobResource(unittest.TestCase):
         popen_call_args, popen_call_kwargs = mock_subprocess.Popen.call_args
         self.assertEqual(popen_call_args[0], job.command_line)
         self.assertEqual(popen_call_kwargs['cwd'], '/tmp/Issue_1')
-        print popen_call_kwargs['stdout']
+        #print popen_call_kwargs['stdout']
         stdout, stderr = popen_call_kwargs['stdout']._mock_new_parent.call_args_list
         stdout.assert_called_once_with('/tmp/Issue_1/stdout.txt')
         stderr.assert_called_once_with('/tmp/Issue_1/stderr.txt')
