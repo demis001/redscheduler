@@ -1,0 +1,15 @@
+language: python
+python:
+  - "2.6"
+  - "2.7"
+  - "3.2"
+  - "3.3"
+  - "3.4"
+install:
+    - pip install -r redscheduler/test/requirements.txt
+    - pip install -r requirements.txt
+    - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install unittest2; fi
+script:
+    - nosetests --with-coverage --cover-erase --cover-package=redscheduler
+after_success:
+    - coveralls
