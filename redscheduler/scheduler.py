@@ -68,7 +68,7 @@ class Job(Issue):
         '''
         args = []
         for line in self.description.splitlines():
-            line = line.encode('utf-8')
+            line = line
             line = self._replace_attachment_with_path(line)
             args += shlex.split(line)
         return args
@@ -154,7 +154,8 @@ class Job(Issue):
         attachments = self.attachments
         for attach in attachments:
             p = 'attachment:{0}'.format(attach.filename)
-            text = re.sub(p, os.path.join(self.issue_dir,attach.filename), text)
+            path = os.path.join(self.issue_dir, attach.filename)
+            text = text.replace(p, path)
         return text
 
     @property
@@ -177,7 +178,7 @@ class Job(Issue):
             'ISSUEDIR': self.issue_dir
         }
         _jobdef = {}
-        for k,v in jobdef.iteritems():
+        for k,v in jobdef.items():
             _jobdef[k] = v.format(**replaces)
         return _jobdef
 
