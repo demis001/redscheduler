@@ -6,6 +6,7 @@ import subprocess
 import re
 import os
 import string
+import sys
 
 from redmine import Redmine
 from redmine.resources import Issue
@@ -58,6 +59,16 @@ class Job(Issue):
     def translate_params(cls, params):
         return super(Job, cls).translate_params(params)
 
+    def _split_args(self, text):
+        '''
+        Handle shlex.split such that input text is converted to ascii first
+        
+        :param str text: unicode or ascii string
+        :return: list of strings via shlex.split
+        '''
+        text = str(text)
+        return shlex.split(text)
+
     @property
     def arguments(self):
         '''
@@ -70,7 +81,7 @@ class Job(Issue):
         for line in self.description.splitlines():
             line = line
             line = self._replace_attachment_with_path(line)
-            args += shlex.split(line)
+            args += self._split_args(line)
         return args
 
     @property
@@ -141,7 +152,7 @@ class Job(Issue):
         '''
         jobdef = self.job_def
         cli_str = self._replace_attachment_with_path(jobdef['cli'])
-        cli = shlex.split(cli_str)
+        cli = self._split_args(cli_str)
         return cli + self.arguments
 
     def _replace_attachment_with_path(self, text):

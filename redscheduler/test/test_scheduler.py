@@ -114,7 +114,7 @@ class TestJobResource(unittest.TestCase):
     def test_argument_property(self):
         self.response.json = json_response(responses['Job']['get'])
         job = self.redscheduler.Job.get(1)
-        job.description = "-input eggs.txt\r\n-output \"spam spam.txt\"\r\n-cmd \"echo '$MONEY'\""
+        job.description = u"-input eggs.txt\r\n-output \"spam spam.txt\"\r\n-cmd \"echo '$MONEY'\""
         self.assertEqual(['-input','eggs.txt','-output','spam spam.txt', '-cmd', "echo '$MONEY'"], job.arguments)
         self.assertRaises(
             AttributeError,
@@ -169,10 +169,7 @@ class TestJobResource(unittest.TestCase):
         response = responses['Job']['get']
         response['issue']['attachments'] = responses['attachments']['all']
         self.response.json = json_response(response)
-        job = self.redscheduler.Job.get(1)#, include='attachments')
-
-        job.attachments
-
+        job = self.redscheduler.Job.get(1)
         r = job._replace_attachment_with_path('foo attachment:bar.txt baz')
         self.assertEqual('foo /tmp/Issue_1/bar.txt baz', r)
 
@@ -185,16 +182,36 @@ class TestJobResource(unittest.TestCase):
             'siteurl': 'http://foo.bar',
             'output_directory': '/tmp',
             'jobschedulerproject': 'foo',
-            'job_defs': {'example': {'cli': 'foo -bar attachment:baz.txt', 'stdout': '{ISSUEDIR}/stdout.txt', 'stderr': '{ISSUEDIR}/stderr.txt'}}
+            'job_defs': {'example': {'cli': u'foo -bar attachment:baz.txt', 'stdout': '{ISSUEDIR}/stdout.txt', 'stderr': '{ISSUEDIR}/stderr.txt'}}
         }
         job = self.redscheduler.Job.get(1)
-        job.description = 'foo\r\n--arg1 bar\r\n'
-        cmd = ['foo', '-bar', '/tmp/Issue_1/baz.txt'] + job.arguments
+        job.description = u'foo\r\n--arg1 attachment:baz.txt\r\n'
+        cmd = ['foo', '-bar', '/tmp/Issue_1/baz.txt', 'foo', '--arg1', '/tmp/Issue_1/baz.txt']
         self.assertEqual(cmd, job.command_line)
         self.assertRaises(
             AttributeError,
             setattr, job, 'command_line', ''
         )
+
+    @attr('current')
+    def test_split_args_unicode(self):
+        response = responses['Job']['get']
+        response['issue']['attachments'] = responses['attachments']['all']
+        self.response.json = json_response(response)
+        job = self.redscheduler.Job.get(1)
+
+        a = u'foo bar'
+        self.assertEqual(['foo','bar'], job._split_args(a))
+
+    @attr('current')
+    def test_split_args_ascii(self):
+        response = responses['Job']['get']
+        response['issue']['attachments'] = responses['attachments']['all']
+        self.response.json = json_response(response)
+        job = self.redscheduler.Job.get(1)
+
+        a = 'foo bar'
+        self.assertEqual(['foo','bar'], job._split_args(a))
 
     def test_job_def_property(self):
         self.response.json = json_response(responses['Job']['get'])
