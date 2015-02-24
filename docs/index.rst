@@ -10,6 +10,7 @@ Contents:
     
     installation
     configuration
+    jobs
 
 Indices and tables
 ==================
