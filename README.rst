@@ -18,5 +18,4 @@ Use `Redmine <http://www.redmine.org>`_ issues to model a simple job queue syste
 Not nearly as comprehensive as using a full blown scheduler like PBS or SGE, but
 aims at being lightweight and simple.
 
-Documentation will be hosted on Read The Docs `here <http://redscheduler.readthedocs.org>`_
-sometime
+Documentation is hosted on Read The Docs `here <http://redscheduler.readthedocs.org>`_
