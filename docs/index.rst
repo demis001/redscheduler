@@ -3,6 +3,8 @@ RedSample
 
 .. include:: ../README.rst
 
+.. include:: ../TODO.rst
+
 Contents:
 
 .. toctree::
@@ -11,7 +13,6 @@ Contents:
     installation
     configuration
     jobs
-    TODO
 
 Indices and tables
 ==================
