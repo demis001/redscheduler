@@ -7,7 +7,7 @@ python:
 install:
     - pip install -r redscheduler/test/requirements.txt
     - pip install -r requirements.txt
-    - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install unittest2; fi
+    - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install unittest2 ordereddict; fi
 script:
     - nosetests --with-coverage --cover-erase --cover-package=redscheduler
 after_success:

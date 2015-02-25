@@ -7,7 +7,10 @@ import re
 import os
 import string
 import sys
-from collections import OrderedDict
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
 
 from redmine import Redmine
 from redmine.resources import Issue
