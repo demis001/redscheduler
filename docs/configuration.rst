@@ -155,3 +155,16 @@ This is an optional option that specifies the location of the file where to plac
 any output that gets generated on STDERR from running the cli directive
 
 Ommitting this option will use the default of {ISSUEDIR}/stderr.txt
+
+uploads
+^^^^^^^
+
+This is a list of files that you want to be uploaded to the issue once the
+job has completed. These paths need to include {ISSUEDIR} and cannot have
+a relative path that goes outside of the issue directory. That is the following
+will not work::
+
+    /tmp/bob.txt
+    {ISSUEDIR}/../../etc/passwd
+
+

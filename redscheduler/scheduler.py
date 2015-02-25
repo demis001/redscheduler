@@ -25,6 +25,12 @@ class MissingJobDef(Exception):
     '''
     pass
 
+class InvalidUploadPath(Exception):
+    '''
+    Raised when path to upload is invalid
+    '''
+    pass
+
 class RedScheduler(Redmine):
     def __init__(self, config):
         self.config = config
@@ -190,7 +196,22 @@ class Job(Issue):
         }
         _jobdef = {}
         for k,v in jobdef.items():
-            _jobdef[k] = v.format(**replaces)
+            if k == 'uploads':
+                if k not in _jobdef:
+                    _jobdef[k] = []
+                # Do replaces on every item in list
+                for uploadpath in v:
+                    # First replace path with replaces
+                    path = uploadpath.format(**replaces)
+                    # This path should be absolute and also normalized(no extra ..)
+                    path = os.path.abspath(os.path.normpath(path))
+                    if self.issue_dir not in path:
+                        raise InvalidUploadPath("{0}({1}) is outside of {2}".format(
+                            uploadpath, path, self.issue_dir
+                        ))
+                    _jobdef[k].append(path)
+            else:
+                _jobdef[k] = v.format(**replaces)
         return _jobdef
 
     @property
@@ -256,6 +277,14 @@ class Job(Issue):
         print("Return code was {0}".format(retcode))
         if retcode == 0:
             self.statusname = 'Completed'
+            # May not have attribute yet
+            if not hasattr(self, 'uploads'):
+                self.uploads = []
+            # Upload requested result files
+            for upload in jobdef.get('uploads', []):
+                self.uploads.append(
+                    {'path': upload, 'filename': os.path.basename(upload)}
+                )
         else:
             self.statusname = 'Error'
 

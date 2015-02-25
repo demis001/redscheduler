@@ -213,18 +213,44 @@ class TestJobResource(unittest.TestCase):
         a = 'foo bar'
         self.assertEqual(['foo','bar'], job._split_args(a))
 
+    def test_upload_cannot_be_outside_of_issuedir(self):
+        self.response.json = json_response(responses['Job']['get'])
+        job = self.redscheduler.Job.get(1)
+        job.manager.redmine.config['job_defs']['example']['uploads'] = ['/path/foo.txt']
+        self.assertRaises(
+            scheduler.InvalidUploadPath,
+            lambda: job.job_def
+        )
+        job.manager.redmine.config['job_defs']['example']['uploads'] = ['/path/foo.txt']
+        self.assertRaises(
+            scheduler.InvalidUploadPath,
+            lambda: job.job_def
+        )
+
     def test_job_def_property(self):
         self.response.json = json_response(responses['Job']['get'])
         self.redscheduler.config = {
             'siteurl': 'http://foo.bar',
             'output_directory': '/tmp',
             'jobschedulerproject': 'foo',
-            'job_defs': {'example': {'cli': 'foo -bar', 'stdout': '{ISSUEDIR}/stdout.txt', 'stderr': '{ISSUEDIR}/stderr.txt'}}
+            'job_defs': {
+                'example': {
+                    'cli': 'foo -bar',
+                    'stdout': '{ISSUEDIR}/stdout.txt',
+                    'stderr': '{ISSUEDIR}/stderr.txt',
+                    'uploads': [
+                        '{ISSUEDIR}/stdout.txt',
+                        '{ISSUEDIR}/stderr.txt'
+                    ]
+                }
+            }
         }
         job = self.redscheduler.Job.get(1)
         self.assertEqual('foo -bar', job.job_def['cli'])
         self.assertEqual('/tmp/Issue_1/stdout.txt', job.job_def['stdout'])
         self.assertEqual('/tmp/Issue_1/stderr.txt', job.job_def['stderr'])
+        self.assertEqual('/tmp/Issue_1/stdout.txt', job.job_def['uploads'][0])
+        self.assertEqual('/tmp/Issue_1/stderr.txt', job.job_def['uploads'][1])
 
     def test_no_job_def_for_tracker(self):
         self.response.json = json_response(responses['Job']['get'])
@@ -254,7 +280,7 @@ class TestJobResource(unittest.TestCase):
     @mock.patch('redscheduler.scheduler.os')
     @mock.patch('redscheduler.scheduler.subprocess')
     def test_run_runs_correct_popen(self, mock_subprocess, mock_os):
-        mock_os.path.join = os.path.join
+        mock_os.path = os.path
         response = responses['Job']['get']
         response['issue']['attachment'] = {'content_url': 'http://foo/bar.txt'}
         issue_status = responses['issue_status']['all']['issue_statuses']
@@ -271,7 +297,11 @@ class TestJobResource(unittest.TestCase):
                 'example': {
                     'cli': 'exe foo -bar attachment:bar.txt',
                     'stdout': '{ISSUEDIR}/stdout.txt',
-                    'stderr': '{ISSUEDIR}/stderr.txt'
+                    'stderr': '{ISSUEDIR}/stderr.txt',
+                    'uploads': [
+                        '{ISSUEDIR}/stdout.txt',
+                        '{ISSUEDIR}/stderr.txt'
+                    ]
                 }
             }
         }
@@ -287,13 +317,15 @@ class TestJobResource(unittest.TestCase):
         stdout.assert_called_once_with('/tmp/Issue_1/stdout.txt')
         stderr.assert_called_once_with('/tmp/Issue_1/stderr.txt')
         self.assertEqual('Completed', job.statusname)
+        self.assertEqual(job.uploads[0]['path'], '/tmp/Issue_1/stdout.txt')
+        self.assertEqual(job.uploads[1]['path'], '/tmp/Issue_1/stderr.txt')
 
     @mock.patch('redmine.open', mock.mock_open(), create=True)
     @mock.patch('redscheduler.scheduler.open', mock.mock_open(), create=True)
     @mock.patch('redscheduler.scheduler.os')
     @mock.patch('redscheduler.scheduler.subprocess')
     def test_run_job_writes_stdout_stderr_not_specified(self, mock_subprocess, mock_os):
-        mock_os.path.join = os.path.join
+        mock_os.path = os.path
         response = responses['Job']['get']
         response['issue']['attachment'] = {'content_url': 'http://foo/bar.txt'}
         issue_status = responses['issue_status']['all']['issue_statuses']
@@ -307,7 +339,7 @@ class TestJobResource(unittest.TestCase):
             'jobschedulerproject': 'foo',
             'job_defs': {
                 'example': {
-                    'cli': 'exe foo -bar',
+                    'cli': 'exe foo -bar'
                 }
             }
         }
@@ -323,9 +355,10 @@ class TestJobResource(unittest.TestCase):
     @mock.patch('redscheduler.scheduler.os')
     @mock.patch('redscheduler.scheduler.subprocess')
     def test_run_job_fails_sets_error_status(self, mock_subprocess, mock_os):
-        mock_os.path.join = os.path.join
+        mock_os.path = os.path
         response = responses['Job']['get']
         response['issue']['attachment'] = {'content_url': 'http://foo/bar.txt'}
+        response['upload'] = {'token': '123456'}
         issue_status = responses['issue_status']['all']['issue_statuses']
         response['issue_statuses'] = issue_status
         self.response.iter_content = lambda chunk_size: (str(num) for num in range(0, 5))
@@ -338,6 +371,9 @@ class TestJobResource(unittest.TestCase):
             'job_defs': {
                 'example': {
                     'cli': 'exe foo -bar',
+                    'uploads': [
+                        '{ISSUEDIR}/foo.txt'
+                    ]
                 }
             }
         }
@@ -345,3 +381,4 @@ class TestJobResource(unittest.TestCase):
         mock_subprocess.Popen.return_value.wait.return_value = 1
         job.run()
         self.assertEqual('Error', job.statusname)
+        self.assertRaises(AttributeError, lambda: job.uploads)

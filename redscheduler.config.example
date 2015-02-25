@@ -14,6 +14,10 @@ job_defs:
     # output from stdout will be put into the issue directory/output.stdout
     # {ISSUEDIR} will be replaced with the path to the issue_id directory inside
     # of output_directory
+    # After the job sucessfully completes, output.stdout will be uploaded to the
+    # issue
     example:
         cli: "echo -e \"foo\nbar\""
         stdout: "{ISSUEDIR}/output.stdout"
+        uploads:
+            - "{ISSUEDIR}/output.stdout"
