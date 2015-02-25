@@ -79,8 +79,8 @@ class TestJobManager(unittest.TestCase):
 
     def test_ensures_project_id_from_config(self):
         self.assertEqual(
-            {'project_id':self.config['jobschedulerproject']},
-            self.redscheduler.Job.prepare_params({'project_id': 'foo'})
+            self.config['jobschedulerproject'],
+            self.redscheduler.Job.prepare_params({'project_id': 'foo'})['project_id']
         )
 
 class TestJobResource(unittest.TestCase):
