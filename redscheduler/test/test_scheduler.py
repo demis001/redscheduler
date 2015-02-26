@@ -382,3 +382,36 @@ class TestJobResource(unittest.TestCase):
         job.run()
         self.assertEqual('Error', job.statusname)
         self.assertRaises(AttributeError, lambda: job.uploads)
+
+    @mock.patch('redmine.open', mock.mock_open(), create=True)
+    @mock.patch('redscheduler.scheduler.open', mock.mock_open(), create=True)
+    @mock.patch('redscheduler.scheduler.os')
+    @mock.patch('redscheduler.scheduler.subprocess')
+    def test_run_job_fails_sets_error_status(self, mock_subprocess, mock_os):
+        mock_os.path = os.path
+        response = responses['Job']['get']
+        response['issue']['attachment'] = {'content_url': 'http://foo/bar.txt'}
+        response['upload'] = {'token': '123456'}
+        issue_status = responses['issue_status']['all']['issue_statuses']
+        response['issue_statuses'] = issue_status
+        self.response.iter_content = lambda chunk_size: (str(num) for num in range(0, 5))
+        response_mock = mock.Mock()
+        self.response.json = json_response(response)
+        self.redscheduler.config = {
+            'siteurl': 'http://foo.bar',
+            'output_directory': '/tmp',
+            'jobschedulerproject': 'foo',
+            'job_defs': {
+                'example': {
+                    'cli': 'exe foo -bar',
+                    'uploads': [
+                        '{ISSUEDIR}/foo.txt'
+                    ]
+                }
+            }
+        }
+        job = self.redscheduler.Job.get(1)
+        mock_subprocess.Popen.side_effect = OSError("foo")
+        job.run()
+        self.assertEqual(job.notes, 'Error: foo')
+        self.assertEqual(job.statusname, 'Error')
