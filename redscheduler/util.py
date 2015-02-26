@@ -76,4 +76,4 @@ def get_availmem(meminfo, unit='K'):
         raise ValueError('{0} is not a valid unit identifier'.format(unit))
     avail = [meminfo['MemFree'], meminfo['Buffers'], meminfo['Cached']]
     avail = sum(map(lambda x: int(x.split()[0]), avail))
-    return avail / unit_map[unit]
+    return int(avail / unit_map[unit])
