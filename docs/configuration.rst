@@ -269,7 +269,7 @@ instead.
     mkdir -p ~/jobdefscripts
     cat <<EOF > ~/jobdefscripts/replace-comma-with-tab.sh
     #!/usr/bin/env bash
-    tr ',' '\t' < $1 > output.tsv
+    tr ',' '\t' < \$1 > output.tsv
     EOF
     chmod 755 ~/jobdefscripts/replace-comma-with-tab.sh
 
