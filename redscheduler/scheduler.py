@@ -52,18 +52,6 @@ class JobManager(ResourceManager):
     def __init__(self, redmine, resource_name):
         self.redmine = redmine
         self.resource_class = Job
-
-    def prepare_params(self, params):
-        '''
-        Make sure project_id is always in params
-        '''
-        if 'project_id' in params:
-            del params['project_id']
-        params = super(JobManager, self).prepare_params(params)
-        ordered_params = OrderedDict()
-        ordered_params['project_id'] = self.redmine.config['jobschedulerproject']
-        ordered_params.update(params)
-        return ordered_params
         
 class Job(Issue):
     _members = Issue._members + (
@@ -251,7 +239,7 @@ class Job(Issue):
         '''
         # Set status to in progress
         self.statusname = 'In Progress'
-        self.notes = 'Output will be located in {0}'.format(self.issue_dir)
+        self.notes = 'Output will be located in {0}\r\n'.format(self.issue_dir)
         self.save()
         print("Updated issue status with output location and set to In Progress")
     
@@ -277,9 +265,19 @@ class Job(Issue):
         stderr_fh = open(stderr_path, 'w')
         try:
             print("Running {0}".format(' '.join(cli)))
-            p = subprocess.Popen(cli, stdout=stdout_fh, stderr=stderr_fh, cwd=self.issue_dir)
+            p = subprocess.Popen(
+                cli, stdout=stdout_fh, stderr=stderr_fh, cwd=self.issue_dir
+            )
             # Wait for job to complete or error
             retcode = p.wait()
+        except OSError as e:
+            if e.errno == 2:
+                self.notes = 'Error: cli executable in redsample config cannot be found'
+            elif e.errno == 13:
+                self.notes = 'Error: cli executable in redsample config is not executable'
+            else:
+                self.notes = 'Error: {0}'.format(e)
+            retcode = -1
         except Exception as e:
             self.notes = 'Error: {0}'.format(e)
             retcode = -1
@@ -292,9 +290,15 @@ class Job(Issue):
                 self.uploads = []
             # Upload requested result files
             for upload in jobdef.get('uploads', []):
-                self.uploads.append(
-                    {'path': upload, 'filename': os.path.basename(upload)}
-                )
+                exists = os.path.exists(upload)
+                if not exists:
+                    self.notes += 'Warning: {0} does not exist\r\n'.format(upload)
+                    self.statusname = 'Error'
+                    retcode = -1
+                else:
+                    self.uploads.append(
+                        {'path': upload, 'filename': os.path.basename(upload)}
+                    )
         else:
             self.statusname = 'Error'
 

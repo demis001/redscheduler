@@ -1,6 +1,6 @@
 from . import unittest, mock, CONFIG_EXAMPLE, builtins
 
-from .. import util
+from redscheduler import util
 
 sysinfo = {
     'meminfo': [

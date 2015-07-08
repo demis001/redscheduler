@@ -14,8 +14,9 @@
 redscheduler
 ============
 
-Use `Redmine <http://www.redmine.org>`_ issues to model a simple job queue system.
-Not nearly as comprehensive as using a full blown scheduler like PBS or SGE, but
-aims at being lightweight and simple.
+Use `Redmine <http://www.redmine.org>`_ issues that model job specifications to 
+easily setup jobs that need to be run. Then use the built in scraper to run them
+on any computer.
 
-Documentation is hosted on Read The Docs `here <http://redscheduler.readthedocs.org>`_
+Learn more by viewing the full documentation 
+`here <http://redscheduler.readthedocs.org>`_
