@@ -1,4 +1,4 @@
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 __release__ = __version__ + '-dev'
 __authors__ = 'Tyghe Vallard'
 __projectname__ = 'redscheduler'
