@@ -265,9 +265,19 @@ class Job(Issue):
         stderr_fh = open(stderr_path, 'w')
         try:
             print("Running {0}".format(' '.join(cli)))
-            p = subprocess.Popen(cli, stdout=stdout_fh, stderr=stderr_fh, cwd=self.issue_dir)
+            p = subprocess.Popen(
+                cli, stdout=stdout_fh, stderr=stderr_fh, cwd=self.issue_dir
+            )
             # Wait for job to complete or error
             retcode = p.wait()
+        except OSError as e:
+            if e.errno == 2:
+                self.notes = 'Error: cli executable in redsample config cannot be found'
+            elif e.errno == 13:
+                self.notes = 'Error: cli executable in redsample config is not executable'
+            else:
+                self.notes = 'Error: {0}'.format(e)
+            retcode = -1
         except Exception as e:
             self.notes = 'Error: {0}'.format(e)
             retcode = -1
