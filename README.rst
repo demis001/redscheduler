@@ -1,8 +1,8 @@
-.. image:: https://travis-ci.org/necrolyte2/redscheduler.svg
-    :target: https://travis-ci.org/necrolyte2/redscheduler
+.. image:: https://travis-ci.org/VDBWRAIR/redscheduler.svg
+    :target: https://travis-ci.org/VDBWRAIR/redscheduler
 
-.. image:: https://coveralls.io/repos/necrolyte2/redscheduler/badge.svg?branch=master
-    :target: https://coveralls.io/r/necrolyte2/redscheduler?branch=master
+.. image:: https://coveralls.io/repos/VDBWRAIR/redscheduler/badge.svg?branch=master
+    :target: https://coveralls.io/r/VDBWRAIR/redscheduler?branch=master
 
 .. image:: https://badge.fury.io/py/redscheduler.svg
     :target: https://badge.fury.io/py/redscheduler
