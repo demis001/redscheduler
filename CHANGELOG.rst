@@ -1,6 +1,11 @@
 Changelog
 ---------
 
+0.0.3-dev
++++++++++
+
+- Added runissue command and documentation
+
 0.0.2-dev
 +++++++++
 

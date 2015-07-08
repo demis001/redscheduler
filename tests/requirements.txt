@@ -2,3 +2,4 @@ nose
 mock
 python-coveralls
 unittest2
+tempdir
