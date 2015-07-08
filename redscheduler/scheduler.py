@@ -239,7 +239,7 @@ class Job(Issue):
         '''
         # Set status to in progress
         self.statusname = 'In Progress'
-        self.notes = 'Output will be located in {0}'.format(self.issue_dir)
+        self.notes = 'Output will be located in {0}\r\n'.format(self.issue_dir)
         self.save()
         print("Updated issue status with output location and set to In Progress")
     
@@ -290,9 +290,15 @@ class Job(Issue):
                 self.uploads = []
             # Upload requested result files
             for upload in jobdef.get('uploads', []):
-                self.uploads.append(
-                    {'path': upload, 'filename': os.path.basename(upload)}
-                )
+                exists = os.path.exists(upload)
+                if not exists:
+                    self.notes += 'Warning: {0} does not exist\r\n'.format(upload)
+                    self.statusname = 'Error'
+                    retcode = -1
+                else:
+                    self.uploads.append(
+                        {'path': upload, 'filename': os.path.basename(upload)}
+                    )
         else:
             self.statusname = 'Error'
 

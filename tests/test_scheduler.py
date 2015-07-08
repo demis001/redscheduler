@@ -316,6 +316,7 @@ class TestRunningJob(JobResourceBase):
         self.response.iter_content = lambda chunk_size: (str(num) for num in range(0, 5))
         response_mock = mock.Mock()
         self.response.json = json_response(response)
+        self.mock_os.path.exists = mock.Mock(side_effect = [True,True])
 
     def test_run_runs_correct_popen(self):
         job = self.redscheduler.Job.get(1)
@@ -392,5 +393,26 @@ class TestRunningJob(JobResourceBase):
         self.assertEqual(
             job.notes, 'Error: [Errno 1] Some error'
         )
+        self.assertEqual(job.statusname, 'Error')
+        self.assertEqual(-1, r)
+
+    def test_upload_file_missing(self):
+        self.redscheduler.config['job_defs']['example']['uploads'].append(
+            '{ISSUEDIR}/missing.txt'
+        )
+        self.redscheduler.config['job_defs']['example']['uploads'].append(
+            '{ISSUEDIR}/missing2.txt'
+        )
+        job = self.redscheduler.Job.get(1)
+        self.mock_os.path.exists.side_effect = [True, True, False, False]
+        self.mock_subprocess.Popen.return_value.wait.return_value = 0
+        r = job.run()
+        self.assertEqual(
+            job.notes,
+            'Output will be located in /tmp/Issue_1\r\n'
+            'Warning: /tmp/Issue_1/missing.txt does not exist\r\n' \
+            'Warning: /tmp/Issue_1/missing2.txt does not exist\r\n'
+        )
+        self.assertEqual(2, len(job.uploads))
         self.assertEqual(job.statusname, 'Error')
         self.assertEqual(-1, r)
