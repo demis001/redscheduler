@@ -12,5 +12,10 @@ setup(
     description = 'Use redmine to manage sample data',
     license = 'GPL v2',
     keywords = 'inventory, sample, management, redmine',
-    url = 'https://github.com/VDBWRAIR/redscheduler'
+    url = 'https://github.com/VDBWRAIR/redscheduler',
+    entry_points = {
+        'console_scripts': [
+            'runissue = redscheduler.runissue:main',
+        ]
+    }
 )

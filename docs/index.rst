@@ -12,6 +12,7 @@ Contents:
     
     installation
     configuration
+    runissue
 
 Indices and tables
 ==================
