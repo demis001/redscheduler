@@ -37,15 +37,6 @@ apikey
 
 You can get this from the My Account page in Redmine
 
-jobschedulerproject
-^^^^^^^^^^^^^^^^^^^
-
-This is the project identifier(**not project name**) that jobs will be pulled
-from.
-
-You can find this by going to the settings tab of the project in Redmine and 
-looinking in the Identifier box.
-
 output_directory
 ^^^^^^^^^^^^^^^^
 
@@ -202,15 +193,6 @@ Redmine Setup
 
 The redmine setup is quite simple.
 
-Job Schedule Project
---------------------
-
-You just need to have a project created that you will put issues in that will run 
-your jobs.
-
-The created project's identifier needs to be set in the local configuration
-file for ``jobschedulerproject``
-
 Job Def Tracker
 ---------------
 
@@ -242,7 +224,6 @@ Assume we are using the example config(redscheduler.config.example) that comes
 with this project.
 
 * output_directory is set to /tmp
-* jobschedulerproject is set to scheduler-project
 
 We want to define a job that will convert comma separated files to tab separated 
 files and then upload the result back to the issue when it is completed.

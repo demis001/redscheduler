@@ -49,8 +49,10 @@ class TestRedScheduler(unittest.TestCase):
     def test_initializes_correctly(self):
         self.assertEqual(self.redscheduler.url, self.config['siteurl'])
         self.assertEqual(self.redscheduler.key, self.config['apikey'])
-        self.assertEqual(self.config['jobschedulerproject'], self.redscheduler.config['jobschedulerproject'])
         self.assertEqual(self.redscheduler.custom_resource_paths, ('redscheduler.scheduler',))
+
+    def test_contains_config(self):
+        self.assertEqual(self.redscheduler.config, self.config)
 
     def test_gets_jobs_manager(self):
         _jobm = self.redscheduler.Job
@@ -75,12 +77,6 @@ class TestJobManager(unittest.TestCase):
         self.assertIs(
             self.redscheduler.Job.resource_class,
             scheduler.Job
-        )
-
-    def test_ensures_project_id_from_config(self):
-        self.assertEqual(
-            self.config['jobschedulerproject'],
-            self.redscheduler.Job.prepare_params({'project_id': 'foo'})['project_id']
         )
 
 class TestJobResource(unittest.TestCase):

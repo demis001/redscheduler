@@ -9,8 +9,7 @@ class TestGetConfig(unittest.TestCase):
     def test_loads_config(self):
         r = config.load_config(CONFIG_EXAMPLE)
         keys = sorted((
-            'siteurl', 'apikey', 'jobschedulerproject',
-            'output_directory', 'job_defs'
+            'siteurl', 'apikey', 'output_directory', 'job_defs'
         ))
         self.assertEqual(keys, sorted(r.keys()))
 

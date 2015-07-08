@@ -52,18 +52,6 @@ class JobManager(ResourceManager):
     def __init__(self, redmine, resource_name):
         self.redmine = redmine
         self.resource_class = Job
-
-    def prepare_params(self, params):
-        '''
-        Make sure project_id is always in params
-        '''
-        if 'project_id' in params:
-            del params['project_id']
-        params = super(JobManager, self).prepare_params(params)
-        ordered_params = OrderedDict()
-        ordered_params['project_id'] = self.redmine.config['jobschedulerproject']
-        ordered_params.update(params)
-        return ordered_params
         
 class Job(Issue):
     _members = Issue._members + (
