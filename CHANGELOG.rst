@@ -5,6 +5,7 @@ Changelog
 +++++++++
 
 - Added runissue command and documentation
+- Added bootstrap_vi to make install docs easier for virtualenv setup
 
 0.0.2-dev
 +++++++++

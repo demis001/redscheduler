@@ -17,5 +17,8 @@ setup(
         'console_scripts': [
             'runissue = redscheduler.runissue:main',
         ]
-    }
+    },
+    setup_requires = [
+        'bootstrap_vi',
+    ]
 )
