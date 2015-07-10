@@ -317,7 +317,7 @@ class TestRunningJob(JobResourceBase):
         r = job.run()
         self.assertEqual(
             job.notes,
-            'Error: cli executable in redsample config is not executable'
+            'Error: cli executable in redscheduler config is not executable'
         )
         self.assertEqual(job.statusname, 'Error')
         self.assertEqual(-1, r)
@@ -329,7 +329,7 @@ class TestRunningJob(JobResourceBase):
         self.mock_subprocess.Popen.side_effect = e
         r = job.run()
         self.assertEqual(
-            job.notes, 'Error: cli executable in redsample config cannot be found'
+            job.notes, 'Error: cli executable in redscheduler config cannot be found'
         )
         self.assertEqual(job.statusname, 'Error')
         self.assertEqual(-1, r)

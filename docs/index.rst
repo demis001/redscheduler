@@ -1,5 +1,5 @@
-RedSample
-=========
+redscheduler
+============
 
 .. include:: ../README.rst
 
