@@ -8,7 +8,7 @@
     :target: https://badge.fury.io/py/redscheduler
 
 .. image:: https://readthedocs.org/projects/redscheduler/badge/?version=latest
-    :target: https://readthedocs.org/projects/redscheduler/?badge=latest
+    :target: http://redscheduler.readthedocs.org/en/latest
     :alt: Documentation Status
 
 redscheduler

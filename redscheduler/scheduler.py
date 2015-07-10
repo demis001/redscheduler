@@ -272,9 +272,9 @@ class Job(Issue):
             retcode = p.wait()
         except OSError as e:
             if e.errno == 2:
-                self.notes = 'Error: cli executable in redsample config cannot be found'
+                self.notes = 'Error: cli executable in redscheduler config cannot be found'
             elif e.errno == 13:
-                self.notes = 'Error: cli executable in redsample config is not executable'
+                self.notes = 'Error: cli executable in redscheduler config is not executable'
             else:
                 self.notes = 'Error: {0}'.format(e)
             retcode = -1
